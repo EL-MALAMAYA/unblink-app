@@ -20,7 +20,7 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "typeRoots": ["src/types", "node_modules/@types"] // Add this line
+    "typeRoots": ["src/types", "node_modules/@types"] // Include this line to add type roots
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
