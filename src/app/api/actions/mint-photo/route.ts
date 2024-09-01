@@ -3,19 +3,16 @@ import {
   createActionHeaders,
   ActionPostResponse,
   ActionPostRequest,
-  createPostResponse
+  createPostResponse,
 } from "@solana/actions";
-import formidable from "formidable";
-import fs from "fs";
-import path from "path";
-import { PublicKey, Transaction, Connection } from "@solana/web3.js"; // Import Solana SDK
+import { PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
 
+// Create headers required for the API
 const headers = createActionHeaders({
-  chainId: "mainnet", 
-  actionVersion: "2.2.1",
+  chainId: "mainnet", // or "devnet" for testing
+  actionVersion: "2.2.1", 
 });
 
-// Handle GET request to show information about the action
 export const GET = async (req: Request) => {
   const payload: ActionGetResponse = {
     title: "Mint Your Photo as an NFT",
@@ -24,41 +21,37 @@ export const GET = async (req: Request) => {
     label: "Mint Photo",
   };
 
-  return new Response(JSON.stringify(payload), { headers });
-};
+  return Response.json(payload, {
+    headers,
+  });
+}
 
-// Handle OPTIONS request to provide CORS headers
+// Handle OPTIONS request
 export const OPTIONS = GET;
 
-// Handle POST request to upload photo and mint it as an NFT
-export const POST = async (req: any) => {
-  const form = new formidable.IncomingForm();
-  
-  form.parse(req, async (err, fields, files) => {
-    if (err) {
-      return new Response(JSON.stringify({ error: "Error parsing the uploaded photo." }), { status: 500 });
-    }
+// Handle POST request to perform the minting action
+export const POST = async (req: Request) => {
+  const body: ActionPostRequest = await req.json();
+  const userWalletAddress = body.walletAddress; // Get user's wallet address from the request body
 
-    const photo = files.photo;
+  // Create a Solana transaction to mint the NFT
+  const transaction = new Transaction().add(
+    // Example transaction to mint NFT
+    SystemProgram.transfer({
+      fromPubkey: new PublicKey(userWalletAddress), // User's wallet address
+      toPubkey: new PublicKey(userWalletAddress), // Sending back to the user's wallet address
+      lamports: 10000000, // Example amount for minting (1 SOL = 1,000,000,000 lamports)
+    })
+  );
 
-    if (!photo) {
-      return new Response(JSON.stringify({ error: "No photo provided." }), { status: 400 });
-    }
+  const payload: ActionPostResponse = await createPostResponse({
+    fields: {
+      transaction: transaction.serialize().toString('base64'), // Convert transaction to base64 for Solana
+      message: "Your photo is being minted as an NFT!",
+    },
+  });
 
-    // Save photo locally or to cloud storage
-    const photoPath = path.join(process.cwd(), 'uploads', photo.originalFilename);
-    fs.copyFileSync(photo.filepath, photoPath);
-
-    // Your logic to create a Solana transaction and use the photo URL
-    const transaction = "base64-encoded-transaction"; // Replace this with actual logic to create transaction
-
-    const payload: ActionPostResponse = await createPostResponse({
-      fields: {
-        transaction,
-        message: "Your photo will be minted as an NFT!",
-      },
-    });
-
-    return new Response(JSON.stringify(payload), { headers });
+  return Response.json(payload, {
+    headers,
   });
 };
