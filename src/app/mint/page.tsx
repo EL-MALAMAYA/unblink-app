@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet } from "@solana/wallet-adapter-react"; // Import Solana wallet adapter hook
 
 export default function MintPhotoPage() {
-  const { publicKey, connect } = useWallet(); // Get user's wallet public key
   const [photo, setPhoto] = useState<File | null>(null);
   const [status, setStatus] = useState<string>("");
+  const { publicKey } = useWallet(); // Get public key from the wallet
 
   // Handle photo selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -23,14 +23,15 @@ export default function MintPhotoPage() {
     }
 
     if (!publicKey) {
-      await connect(); // Prompt user to connect wallet if not already connected
+      setStatus("Please connect your wallet.");
+      return;
     }
 
     try {
       // Make an API call to mint the photo
       const response = await fetch("/api/actions/mint-photo", {
         method: "POST",
-        body: JSON.stringify({ walletAddress: publicKey.toString() }),
+        body: JSON.stringify({ walletAddress: publicKey.toString() }), // Use the publicKey safely
         headers: { "Content-Type": "application/json" },
       });
 
